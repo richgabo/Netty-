@@ -9,7 +9,7 @@
     margin:0;
     height:100vh;
     display:flex;
-    flex-direction: column; /* Para centrar el nuevo contenido verticalmente */
+    flex-direction: column;
     align-items:center;
     justify-content:center;
     background: radial-gradient(circle at center, 
@@ -19,8 +19,8 @@
                 #191970 100%); /* Azul rey en los bordes */
     color:#fff;
     font-family:Arial, Helvetica, sans-serif;
-    overflow:hidden; /* Esencial para el efecto de caída de corazones */
-    position: relative; /* Necesario para posicionar los corazones */
+    overflow:hidden;
+    position: relative;
   }
   .container {
     font-size:60px;
@@ -30,7 +30,7 @@
     justify-content:center;
     gap:10px;
     transition: opacity 1s ease;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para el texto */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
   }
   .netty {
     position:absolute;
@@ -43,7 +43,8 @@
     align-items:center;
     gap:12px;
     transition: opacity 0.5s ease, transform 0.5s ease;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para el texto */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    z-index: 20; /* Aseguramos que Netty esté muy visible */
   }
   .netty.show {
     opacity:1;
@@ -64,52 +65,35 @@
     opacity:1;
   }
 
-  /* Estilos para la sección de idiomas */
-  .languages-container {
-    margin-top: 20px; /* Espacio entre el texto principal y este */
-    font-size: 24px;
-    text-align: center;
-    max-width: 80%;
-    opacity: 0; /* Inicialmente oculto */
-    transition: opacity 1s ease;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    position: relative; /* Para que esté por encima de los corazones si es necesario */
-    z-index: 10;
-  }
-  .languages-container.show {
-    opacity: 1;
-  }
-  .languages-container span {
-    display: block; /* Cada idioma en una nueva línea */
-    margin-bottom: 5px;
-    animation: fadeIn 1s ease forwards; /* Animación de aparición */
-    opacity: 0; /* Inicialmente oculto para la animación */
-  }
-
-  /* Animación para que los idiomas aparezcan */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-
-  /* Estilos para los corazones que caen */
-  .heart {
+  /* --- Estilos para los elementos que caen (corazones y texto) --- */
+  .falling-element {
     position: absolute;
-    top: -20px; /* Empiezan desde arriba de la pantalla */
-    font-size: 25px;
-    pointer-events: none; /* No interactúan con el ratón */
+    top: -50px; /* Empiezan desde arriba de la pantalla */
+    pointer-events: none;
     opacity: 0;
     animation: fall linear forwards;
-    z-index: 0; /* Asegurarse de que estén detrás del texto */
+    z-index: 1; /* Detrás del texto principal, pero visibles */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+    font-weight: bold;
+  }
+  
+  .falling-heart {
+    font-size: 28px;
+  }
+
+  .falling-text {
+    font-size: 20px;
+    /* Ajusta el color del texto si quieres que destaque más del blanco */
+    color: #ffddf4; /* Rosa pálido para el texto */
   }
 
   @keyframes fall {
     0% {
       transform: translateY(0) translateX(0) rotateZ(0deg);
-      opacity: 0.8;
+      opacity: 0.9;
     }
     100% {
+      /* Caída completa más desplazamiento y rotación */
       transform: translateY(105vh) translateX(var(--end-x)) rotateZ(var(--rotation-end));
       opacity: 0;
     }
@@ -125,24 +109,24 @@
     <span class="dot">💗</span>
   </div>
 
-  <div class="languages-container" id="languagesContainer">
-    <span style="animation-delay: 0.5s;">Te amo</span>
-    <span style="animation-delay: 1s;">I love you</span>
-    <span style="animation-delay: 1.5s;">Je t'aime</span>
-    <span style="animation-delay: 2s;">Ich liebe dich</span>
-    <span style="animation-delay: 2.5s;">Ti amo</span>
-    <span style="animation-delay: 3s;">Eu te amo</span>
-    <span style="animation-delay: 3.5s;">사랑해 (Saranghae)</span>
-    <span style="animation-delay: 4s;">愛してる (Aishiteru)</span>
-    <span style="animation-delay: 4.5s;">我爱你 (Wǒ ài nǐ)</span>
-    <span style="animation-delay: 5s;">S'agapo (Σ'αγαπώ)</span>
-  </div>
-
 <script>
 const textEl = document.getElementById("text");
 const nettyEl = document.getElementById("netty");
 const lettersEl = document.getElementById("letters");
-const languagesContainerEl = document.getElementById("languagesContainer");
+
+// Array de frases "Te amo" para que caigan
+const languages = [
+  "Te amo",
+  "I love you",
+  "Je t'aime",
+  "Ich liebe dich",
+  "Ti amo",
+  "Eu te amo",
+  "사랑해 (Saranghae)",
+  "愛してる (Aishiteru)",
+  "我爱你 (Wǒ ài nǐ)",
+  "S'agapo (Σ'αγαπώ)"
+];
 
 // Secuencia de pasos de texto
 const steps = [
@@ -184,55 +168,63 @@ function writeNetty(word){
     }, idx * 500); // velocidad de escritura (0.5s por letra)
   });
   
-  // Después de que Netty termine de escribirse, mostrar los idiomas
+  // Después de que Netty termine de escribirse, iniciar la lluvia de elementos
   setTimeout(() => {
-    languagesContainerEl.classList.add("show");
-    startHeartRain(); // Iniciar la lluvia de corazones
-  }, word.length * 500 + 1000); // Ajustar este tiempo si es necesario
+    startFallingElements();
+  }, word.length * 500 + 1000);
 }
 
-// Función para generar corazones que caen
-function createHeart() {
-  const heart = document.createElement("span");
-  heart.classList.add("heart");
-  heart.innerHTML = Math.random() < 0.5 ? '🤍' : '💗'; // 50% blanco, 50% rosa
-  
-  // Posición inicial aleatoria en el ancho de la pantalla
-  heart.style.left = `${Math.random() * 100}vw`; 
-  
-  // Duración de la animación aleatoria
-  const duration = Math.random() * 5 + 5; // entre 5 y 10 segundos
-  heart.style.animationDuration = `${duration}s`;
-  
-  // Retraso de la animación aleatorio para que no caigan todos a la vez
-  heart.style.animationDelay = `${Math.random() * 2}s`;
+// -------------------------------------------------------------
+// Función general para crear y animar elementos que caen
+// -------------------------------------------------------------
+let languageIndex = 0;
+let fallingInterval;
 
-  // Variaciones de movimiento horizontal y rotación
-  const endX = (Math.random() - 0.5) * 100; // Desplazamiento horizontal al caer
-  const rotationEnd = (Math.random() - 0.5) * 720; // Rotación aleatoria al caer
-  heart.style.setProperty('--end-x', `${endX}px`);
-  heart.style.setProperty('--rotation-end', `${rotationEnd}deg`);
+function createFallingElement(content, isHeart = true) {
+  const element = document.createElement("span");
+  element.classList.add("falling-element");
+  element.innerHTML = content;
+  
+  if (isHeart) {
+    element.classList.add("falling-heart");
+  } else {
+    element.classList.add("falling-text");
+  }
 
-  document.body.appendChild(heart);
+  // Posición, duración y variación aleatoria
+  element.style.left = `${Math.random() * 100}vw`; 
+  const duration = Math.random() * 5 + 6; // 6 a 11 segundos
+  element.style.animationDuration = `${duration}s`;
+  const endX = (Math.random() - 0.5) * 200; // Desplazamiento horizontal
+  const rotationEnd = (Math.random() - 0.5) * 720; // Rotación
+  element.style.setProperty('--end-x', `${endX}px`);
+  element.style.setProperty('--rotation-end', `${rotationEnd}deg`);
 
-  // Eliminar el corazón del DOM una vez que termina su animación para no saturar
-  heart.addEventListener('animationend', () => {
-    heart.remove();
+  document.body.appendChild(element);
+
+  element.addEventListener('animationend', () => {
+    element.remove();
   });
 }
 
-// Iniciar la lluvia de corazones
-let heartInterval;
-function startHeartRain() {
-  // Crear un corazón inicial para que empiece de inmediato
-  createHeart(); 
-  heartInterval = setInterval(createHeart, 300); // Crea un corazón cada 300ms
+function startFallingElements() {
+  // Crear el primer elemento al inicio
+  createFallingElement(Math.random() < 0.5 ? '🤍' : '💗', true);
+  
+  fallingInterval = setInterval(() => {
+    // 60% de probabilidad de que caiga un corazón
+    if (Math.random() < 0.6) {
+      // Corazón
+      createFallingElement(Math.random() < 0.5 ? '🤍' : '💗', true);
+    } else {
+      // Texto de idioma
+      const langText = languages[languageIndex % languages.length];
+      createFallingElement(langText, false);
+      // Mover al siguiente idioma en el array
+      languageIndex++;
+    }
+  }, 400); // Crea un elemento (corazón o texto) cada 400ms
 }
-
-// Detener la lluvia de corazones si sales de la página o algo (opcional)
-// window.addEventListener('beforeunload', () => {
-//   clearInterval(heartInterval);
-// });
 
 </script>
 </body>
