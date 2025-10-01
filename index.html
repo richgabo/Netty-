@@ -5,39 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Netty</title>
 <style>
-  /*
-  Colores sugeridos:
-  - Azul rey: #00008b (o uno más oscuro como #191970)
-  - Rosa (similar al Who Really Cares): #ff88a4 (un rosa vibrante y un poco desaturado)
-  */
-
   body {
     margin:0;
     height:100vh;
     display:flex;
+    flex-direction: column; /* Para centrar el nuevo contenido verticalmente */
     align-items:center;
     justify-content:center;
-    
-    /* MODIFICACIÓN DE FONDO: Degradado radial */
-    /*
-    1. radial-gradient: Crea el degradado desde un punto central.
-    2. circle at center: Define la forma (círculo) y la posición (centro).
-    3. #ff88a4 0%: El rosa Who Really Cares, empieza en el centro.
-    4. #ff88a4 20%: El rosa se mantiene hasta el 20% del radio.
-    5. #191970 80%: El azul rey (oscuro) empieza a tomar más presencia.
-    6. #191970 100%: El azul rey domina en los bordes.
-    
-    Ajustando las paradas (ej. 20% y 80%) y el orden de los colores se logra el efecto de difusión en el centro.
-    */
     background: radial-gradient(circle at center, 
                 #ff88a4 0%, /* Rosa Who Really Cares en el centro */
                 #ff88a4 20%, /* El rosa se mantiene */
                 #191970 80%, /* Azul rey oscuro transiciona */
                 #191970 100%); /* Azul rey en los bordes */
-                
     color:#fff;
     font-family:Arial, Helvetica, sans-serif;
-    overflow:hidden;
+    overflow:hidden; /* Esencial para el efecto de caída de corazones */
+    position: relative; /* Necesario para posicionar los corazones */
   }
   .container {
     font-size:60px;
@@ -47,6 +30,7 @@
     justify-content:center;
     gap:10px;
     transition: opacity 1s ease;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para el texto */
   }
   .netty {
     position:absolute;
@@ -59,6 +43,7 @@
     align-items:center;
     gap:12px;
     transition: opacity 0.5s ease, transform 0.5s ease;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Sombra para el texto */
   }
   .netty.show {
     opacity:1;
@@ -78,6 +63,57 @@
   .letters span.show {
     opacity:1;
   }
+
+  /* Estilos para la sección de idiomas */
+  .languages-container {
+    margin-top: 20px; /* Espacio entre el texto principal y este */
+    font-size: 24px;
+    text-align: center;
+    max-width: 80%;
+    opacity: 0; /* Inicialmente oculto */
+    transition: opacity 1s ease;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    position: relative; /* Para que esté por encima de los corazones si es necesario */
+    z-index: 10;
+  }
+  .languages-container.show {
+    opacity: 1;
+  }
+  .languages-container span {
+    display: block; /* Cada idioma en una nueva línea */
+    margin-bottom: 5px;
+    animation: fadeIn 1s ease forwards; /* Animación de aparición */
+    opacity: 0; /* Inicialmente oculto para la animación */
+  }
+
+  /* Animación para que los idiomas aparezcan */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+
+  /* Estilos para los corazones que caen */
+  .heart {
+    position: absolute;
+    top: -20px; /* Empiezan desde arriba de la pantalla */
+    font-size: 25px;
+    pointer-events: none; /* No interactúan con el ratón */
+    opacity: 0;
+    animation: fall linear forwards;
+    z-index: 0; /* Asegurarse de que estén detrás del texto */
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(0) translateX(0) rotateZ(0deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(105vh) translateX(var(--end-x)) rotateZ(var(--rotation-end));
+      opacity: 0;
+    }
+  }
 </style>
 </head>
 <body>
@@ -89,10 +125,24 @@
     <span class="dot">💗</span>
   </div>
 
+  <div class="languages-container" id="languagesContainer">
+    <span style="animation-delay: 0.5s;">Te amo</span>
+    <span style="animation-delay: 1s;">I love you</span>
+    <span style="animation-delay: 1.5s;">Je t'aime</span>
+    <span style="animation-delay: 2s;">Ich liebe dich</span>
+    <span style="animation-delay: 2.5s;">Ti amo</span>
+    <span style="animation-delay: 3s;">Eu te amo</span>
+    <span style="animation-delay: 3.5s;">사랑해 (Saranghae)</span>
+    <span style="animation-delay: 4s;">愛してる (Aishiteru)</span>
+    <span style="animation-delay: 4.5s;">我爱你 (Wǒ ài nǐ)</span>
+    <span style="animation-delay: 5s;">S'agapo (Σ'αγαπώ)</span>
+  </div>
+
 <script>
 const textEl = document.getElementById("text");
 const nettyEl = document.getElementById("netty");
 const lettersEl = document.getElementById("letters");
+const languagesContainerEl = document.getElementById("languagesContainer");
 
 // Secuencia de pasos de texto
 const steps = [
@@ -133,7 +183,57 @@ function writeNetty(word){
       span.classList.add("show");
     }, idx * 500); // velocidad de escritura (0.5s por letra)
   });
+  
+  // Después de que Netty termine de escribirse, mostrar los idiomas
+  setTimeout(() => {
+    languagesContainerEl.classList.add("show");
+    startHeartRain(); // Iniciar la lluvia de corazones
+  }, word.length * 500 + 1000); // Ajustar este tiempo si es necesario
 }
+
+// Función para generar corazones que caen
+function createHeart() {
+  const heart = document.createElement("span");
+  heart.classList.add("heart");
+  heart.innerHTML = Math.random() < 0.5 ? '🤍' : '💗'; // 50% blanco, 50% rosa
+  
+  // Posición inicial aleatoria en el ancho de la pantalla
+  heart.style.left = `${Math.random() * 100}vw`; 
+  
+  // Duración de la animación aleatoria
+  const duration = Math.random() * 5 + 5; // entre 5 y 10 segundos
+  heart.style.animationDuration = `${duration}s`;
+  
+  // Retraso de la animación aleatorio para que no caigan todos a la vez
+  heart.style.animationDelay = `${Math.random() * 2}s`;
+
+  // Variaciones de movimiento horizontal y rotación
+  const endX = (Math.random() - 0.5) * 100; // Desplazamiento horizontal al caer
+  const rotationEnd = (Math.random() - 0.5) * 720; // Rotación aleatoria al caer
+  heart.style.setProperty('--end-x', `${endX}px`);
+  heart.style.setProperty('--rotation-end', `${rotationEnd}deg`);
+
+  document.body.appendChild(heart);
+
+  // Eliminar el corazón del DOM una vez que termina su animación para no saturar
+  heart.addEventListener('animationend', () => {
+    heart.remove();
+  });
+}
+
+// Iniciar la lluvia de corazones
+let heartInterval;
+function startHeartRain() {
+  // Crear un corazón inicial para que empiece de inmediato
+  createHeart(); 
+  heartInterval = setInterval(createHeart, 300); // Crea un corazón cada 300ms
+}
+
+// Detener la lluvia de corazones si sales de la página o algo (opcional)
+// window.addEventListener('beforeunload', () => {
+//   clearInterval(heartInterval);
+// });
+
 </script>
 </body>
 </html>
