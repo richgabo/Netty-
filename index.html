@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Netty</title>
+<style>
+  /*
+  Colores sugeridos:
+  - Azul rey: #00008b (o uno más oscuro como #191970)
+  - Rosa (similar al Who Really Cares): #ff88a4 (un rosa vibrante y un poco desaturado)
+  */
+
+  body {
+    margin:0;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    
+    /* MODIFICACIÓN DE FONDO: Degradado radial */
+    /*
+    1. radial-gradient: Crea el degradado desde un punto central.
+    2. circle at center: Define la forma (círculo) y la posición (centro).
+    3. #ff88a4 0%: El rosa Who Really Cares, empieza en el centro.
+    4. #ff88a4 20%: El rosa se mantiene hasta el 20% del radio.
+    5. #191970 80%: El azul rey (oscuro) empieza a tomar más presencia.
+    6. #191970 100%: El azul rey domina en los bordes.
+    
+    Ajustando las paradas (ej. 20% y 80%) y el orden de los colores se logra el efecto de difusión en el centro.
+    */
+    background: radial-gradient(circle at center, 
+                #ff88a4 0%, /* Rosa Who Really Cares en el centro */
+                #ff88a4 20%, /* El rosa se mantiene */
+                #191970 80%, /* Azul rey oscuro transiciona */
+                #191970 100%); /* Azul rey en los bordes */
+                
+    color:#fff;
+    font-family:Arial, Helvetica, sans-serif;
+    overflow:hidden;
+  }
+  .container {
+    font-size:60px;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    transition: opacity 1s ease;
+  }
+  .netty {
+    position:absolute;
+    font-size:80px;
+    font-weight:900;
+    opacity:0;
+    transform:translateY(30px) scale(0.9);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .netty.show {
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+  .dot {
+    font-size:60px;
+  }
+  .letters {
+    display:inline-block;
+  }
+  .letters span {
+    opacity:0;
+    display:inline-block;
+    transition:opacity 0.4s ease;
+  }
+  .letters span.show {
+    opacity:1;
+  }
+</style>
+</head>
+<body>
+  <div class="container" id="text">I LOVE YOU</div>
+
+  <div class="netty" id="netty">
+    <span class="dot">🤍</span>
+    <div class="letters" id="letters"></div>
+    <span class="dot">💗</span>
+  </div>
+
+<script>
+const textEl = document.getElementById("text");
+const nettyEl = document.getElementById("netty");
+const lettersEl = document.getElementById("letters");
+
+// Secuencia de pasos de texto
+const steps = [
+  "I LOVE YOU",
+  "I 💗 YOU",
+  "💗 YOU",
+  "💗"
+];
+
+let i = 0;
+function nextStep(){
+  if(i < steps.length){
+    textEl.textContent = steps[i];
+    i++;
+    setTimeout(nextStep, 1200);
+  } else {
+    // Ocultar texto
+    setTimeout(()=>{
+      textEl.style.opacity = "0";
+      // Mostrar Netty
+      setTimeout(()=>{
+        nettyEl.classList.add("show");
+        writeNetty("Netty");
+      }, 1000);
+    }, 1200);
+  }
+}
+nextStep();
+
+// Escritura letra por letra
+function writeNetty(word){
+  lettersEl.innerHTML = "";
+  [...word].forEach((ch, idx)=>{
+    const span = document.createElement("span");
+    span.textContent = ch;
+    lettersEl.appendChild(span);
+    setTimeout(()=>{
+      span.classList.add("show");
+    }, idx * 500); // velocidad de escritura (0.5s por letra)
+  });
+}
+</script>
+</body>
+</html>
